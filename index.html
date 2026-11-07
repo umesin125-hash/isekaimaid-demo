@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#122e35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4</title>
+<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4.1</title>
 <style>
 :root { color-scheme: dark; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -38,7 +38,7 @@ canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
 <body>
 <div id="frame">
 <canvas id="game" width="960" height="540" aria-label="横スクロールアクションゲーム"></canvas>
-<div id="version">ver.0.4.0 / 企画・原作：梅酢 / ChatGPT試作</div>
+<div id="version">ver.0.4.1 / 企画・原作：梅酢 / ChatGPT試作</div>
 <button id="sound" aria-label="サウンド切り替え">♪ ON</button>
 <div id="controls" aria-label="タッチ操作パネル">
  <div class="ctrl" id="left" data-control="left">◀</div>
@@ -66,6 +66,8 @@ const W=960,H=540,FLOOR=444,WORLD=3400;
 // 各アトラスは10列×4行、透過PNG。左右反転は描画時に処理。
 const SPRITE_CELL_W=224,SPRITE_CELL_H=208,SPRITE_ANCHOR_X=112,SPRITE_FOOT_Y=188;
 const SPRITE_SCALE=[.89,.66,.68];
+// 操作キャラクターの描画倍率（Ver.0.4.0から全員一律70％）。UIと合体技演出は変更しない。
+const PLAYER_VISUAL_SIZE=0.70;
 const SPRITE_FRAME_COUNT=[8,8,8,10];
 const heroAtlases=[];
 const miliaAtlas=new Image();
@@ -181,9 +183,13 @@ function drawAtlasFrame(hero,row,frameIndex,anchorX,footY,scale,dir=1,blink=fals
   ctx.restore();return true;
 }
 function drawCharacterSprite(screenX,worldY,hero,dir,blink=false){
-  if(!atlasReady(hero)){drawHero(screenX,worldY-14,hero,.98,dir,blink);return;}
+  if(!atlasReady(hero)){
+    const fallbackScale=.98*PLAYER_VISUAL_SIZE;
+    // DrawHero draws its feet at local y=72. Keep the bottom at the physics feet.
+    drawHero(screenX+p.w/2-17*fallbackScale,worldY+p.h-72*fallbackScale,hero,fallbackScale,dir,blink);return;
+  }
   const f=currentActionFrame(hero);
-  drawAtlasFrame(hero,f.row,f.frameIndex,screenX+p.w/2,worldY+p.h+3,SPRITE_SCALE[hero],dir,blink);
+  drawAtlasFrame(hero,f.row,f.frameIndex,screenX+p.w/2,worldY+p.h+3,SPRITE_SCALE[hero]*PLAYER_VISUAL_SIZE,dir,blink);
 }
 function drawPortrait(hero,x=22,y=65,w=50,h=56){
   if(!atlasReady(hero)){drawHero(x+8,y,hero,.59,1,false);return;}
