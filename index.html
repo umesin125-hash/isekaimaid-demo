@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#122e35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.1</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%;height:100%;margin:0;overflow:hidden;background:#091b24;color:#fff;touch-action:none;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; }
+body { display:flex;align-items:center;justify-content:center; }
+#frame { position:relative;width:min(100vw,177.78dvh);aspect-ratio:16/9;max-height:100dvh;overflow:hidden;box-shadow:0 0 0 2px #1f4751,0 15px 70px #000; background:#0d2432; }
+canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
+#menu {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(0deg,rgba(4,15,28,.87),rgba(3,26,33,.28));text-align:center;padding:20px;z-index:8;}
+#menu h1 {margin:0;font-size:clamp(18px,3.6vw,39px);letter-spacing:.07em;text-shadow:3px 4px 0 #133944,0 4px 16px #000;}
+#menu p {line-height:1.55;margin:0;max-width:600px;font-size:clamp(11px,1.6vw,17px)}
+#menu .tag {font-size:clamp(10px,1.2vw,13px);letter-spacing:.18em;color:#e9c883;}
+#start {border:2px solid #f8e8ad;background:#175873;color:white;border-radius:12px;font-size:clamp(13px,2.3vw,24px);padding:.55em 2.1em;font-weight:800;box-shadow:0 5px 0 #093343;cursor:pointer;}
+#start:active {transform:translateY(4px);box-shadow:0 1px 0 #093343;}
+#hint {opacity:.86}
+#controls {position:absolute;inset:0;display:none;pointer-events:none;z-index:5;}
+.ctrl {position:absolute;bottom:5%;border:2px solid #ffffffb7;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#102532a6;color:white;text-shadow:1px 2px #000;font-weight:900;font-size:clamp(11px,2.1vw,24px);user-select:none;-webkit-user-select:none;touch-action:none;pointer-events:auto;box-shadow:inset 0 0 12px #ffffff10;min-width:46px;min-height:43px;}
+.ctrl.pressed { background:#36b6d59c; transform:scale(.96); }
+#left {left:2%;width:8%;height:21%;} #right {left:11%;width:8%;height:21%;}
+#jump {right:23%;width:11%;height:21%;border-color:#7ed3e7;}
+#attack {right:11%;width:11%;height:21%;border-color:#eaa4a4;}
+#swap {right:2%;bottom:30%;width:9%;height:16%;border-color:#e9cc81;}
+#special {right:1%;width:9%;height:21%;border-color:#edda79;font-size:clamp(9px,1.5vw,17px);}
+#rotate {display:none;position:absolute;z-index:12;inset:0;background:#071922eb;align-items:center;justify-content:center;text-align:center;padding:20px;line-height:1.7;font-size:16px;font-weight:bold;}
+@media (orientation: portrait) {#rotate {display:flex;} }
+#sound {position:absolute;right:1%;top:2%;font-size:clamp(11px,1.35vw,17px);border:1px solid #adc9c5aa;color:white;background:#0a2836b8;border-radius:8px;padding:5px 8px;z-index:7;cursor:pointer;}
+#version {position:absolute;left:1.3%;top:2%;font-size:clamp(10px,1.35vw,16px);font-weight:bold;text-shadow:2px 2px #000;z-index:3;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="frame">
+<canvas id="game" width="960" height="540" aria-label="横スクロールアクションゲーム"></canvas>
+<div id="version">ver.0.1.0 / 企画・原作：梅酢 / ChatGPT試作</div>
+<button id="sound" aria-label="サウンド切り替え">♪ ON</button>
+<div id="controls" aria-label="タッチ操作パネル">
+ <div class="ctrl" id="left" data-control="left">◀</div>
+ <div class="ctrl" id="right" data-control="right">▶</div>
+ <div class="ctrl" id="jump" data-control="jump">JUMP</div>
+ <div class="ctrl" id="attack" data-control="attack">攻撃</div>
+ <div class="ctrl" id="swap" data-control="swap">交代</div>
+ <div class="ctrl" id="special" data-control="special">共鳴</div>
+</div>
+<div id="rotate">📱<br>iPhoneを横向きにすると遊べます。<br>画面の回転ロックを解除してください。</div>
+<div id="menu">
+ <div class="tag">QUANTUM RESONANCE · FAN CONCEPT PROTOTYPE</div>
+ <h1>異世界メイドはまさかの俺⁈<br>横スクゲーのアソビカタ</h1>
+ <p id="menuText">草原を駆け抜け、巨大な魔物を倒そう。<br>ミリア・カナト・アリステアを切り替えて戦う、操作できる試作版です。</p>
+ <button id="start">PUSH START</button>
+ <p id="hint">横向き推奨｜画面ボタンで操作｜PC：←→ 移動 / Space ジャンプ / J 攻撃 / K 交代 / L 共鳴</p>
+</div>
+</div>
+<script>
+'use strict';
+(() => {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const W=960,H=540,FLOOR=444,WORLD=3400;
+const frame=document.getElementById('frame'),menu=document.getElementById('menu'),btnStart=document.getElementById('start'),menuText=document.getElementById('menuText');
+const controls=document.getElementById('controls'),soundBtn=document.getElementById('sound');
+const HEROES=[{name:'ミリア',color:'#1cc6f2',hair:'#111d35',cloth:'#e7e5ed',dress:'#234b7b',speed:310,dmg:32,range:85,cool:.28},
+ {name:'カナト',color:'#ed6b6b',hair:'#172333',cloth:'#bc3940',dress:'#64282c',speed:285,dmg:17,range:480,cool:.25},
+ {name:'アリステア',color:'#f5c757',hair:'#df7b32',cloth:'#264e99',dress:'#193363',speed:250,dmg:27,range:450,cool:.52}];
+let state='menu',last=0,elapsed=0,cam=0,score=0,skillsUsed=0,audio=null,soundOn=true,shake=0,flash=0,notice='',noticeT=0,specialT=0,particles=[],projectiles=[],drops=[],enemies=[],boss=null,goal=false;
+let p={x:85,y:FLOOR-54,w:30,h:54,vx:0,vy:0,dir:1,onGround:true,hero:0,hp:100,mq:0,atk:0,inv:0,anim:0};
+const input={left:false,right:false,jump:false,attack:false,swap:false,special:false};
+function initAudio(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(_){}}if(audio?.state==='suspended')audio.resume().catch(()=>{});}
+function beep(freq=400,duration=.08,type='square',vol=.028){if(!soundOn||!audio)return;try{let osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);gain.gain.setValueAtTime(vol,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration)}catch(_){}}
+function rando(n){const t=Math.sin(n*127.13+57.43)*43758.5453;return t-Math.floor(t)}
+function reset(){state='play';elapsed=0;cam=0;score=0;skillsUsed=0;shake=flash=specialT=0;notice='巨大熊型魔物を討伐せよ！';noticeT=2.3;particles=[];projectiles=[];drops=[];goal=false;
+ p={x:85,y:FLOOR-54,w:30,h:54,vx:0,vy:0,dir:1,onGround:true,hero:0,hp:100,mq:0,atk:0,inv:1,anim:0};
+ enemies=[];[330,520,730,940,1190,1400,1610,1840,2060,2270,2490,2680].forEach((x,i)=>enemies.push({x,y:FLOOR-33,w:45,h:33,hp:i%3===0?65:41,max:i%3===0?65:41,dir:i%2?1:-1,home:x,vy:0,t:0,dead:false,boss:false}));
+ boss={x:3050,y:FLOOR-105,w:156,h:105,hp:430,max:430,dir:-1,home:3050,t:0,dead:false,boss:true};enemies.push(boss);
+ controls.style.display='block';menu.style.display='none';
+}
+function end(win){if(state!=='play')return;state=win?'win':'dead';controls.style.display='none';menu.style.display='flex';
+ menuText.innerHTML=win?`<strong>STAGE CLEAR！</strong><br>巨大魔物を討伐した！　スコア ${score}<br>3人の力が希望をつないだ。`:`<strong>GAME OVER</strong><br>スコア ${score}<br>再挑戦して魔物を討伐しよう。`;
+ btnStart.textContent='もう一度プレイ';beep(win?700:120,.35,'sawtooth',.05);
+}
+function spark(x,y,color,n=7){for(let i=0;i<n;i++){let angle=Math.PI*2*rando(elapsed*83+i*19.3),sp=80+rando(i*13.2+elapsed)*200;particles.push({x,y,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp-70,t:.3+rando(i+elapsed)*.35,color,size:3+Math.round(rando(i*1.2)*4)})}}
+function hit(e,dmg){if(e.dead)return;e.hp-=dmg;shake=Math.max(shake,e.boss?5:2);spark(e.x+e.w/2,e.y+e.h/2,e.boss?'#eac768':'#fff8ab',9);p.mq=Math.min(100,p.mq+(e.boss?9:15));score+=4;beep(e.boss?145:235,.05,'triangle',.045);if(e.hp<=0){e.dead=true;score+=e.boss?1000:80;spark(e.x+e.w/2,e.y+e.h/2,'#f8d16c',25);if(e.boss){notice='ボス撃破！右端のゲートへ！';noticeT=4;goal=true;beep(720,.4,'sawtooth')}else if(rando(e.x)>.7){drops.push({x:e.x+15,y:FLOOR-30,t:12})}}}
+function attack(){if(state!=='play'||p.atk>0)return;let h=HEROES[p.hero];p.atk=h.cool;p.anim=.23;let sx=p.x+p.w/2;
+ if(p.hero===0){spark(sx+p.dir*42,p.y+26,h.color,5);enemies.forEach(e=>{if(!e.dead&&Math.abs(e.x+e.w/2-sx)<h.range+e.w/2&&Math.abs(e.y+e.h/2-(p.y+28))<70&&(e.x+e.w/2-sx)*p.dir>-15)hit(e,h.dmg)});beep(580,.09,'sawtooth')}
+ else{projectiles.push({x:sx+p.dir*18,y:p.y+21,dx:p.dir*(p.hero===1?600:440),damage:h.dmg,hero:p.hero,life:1.35,r:p.hero===1?6:14,enemy:false});beep(p.hero===1?470:285,.11,'square')}
+}
+function swap(){if(state!=='play')return;p.hero=(p.hero+1)%3;notice=HEROES[p.hero].name+' に交代！';noticeT=.8;spark(p.x+14,p.y+28,HEROES[p.hero].color,12);beep(850,.12,'triangle')}
+function special(){if(state!=='play')return;if(p.mq<100){notice='MQがまだ足りない！';noticeT=.6;beep(120,.1);return}p.mq=0;specialT=1.05;flash=.8;shake=12;skillsUsed++;p.inv=Math.max(p.inv,1.5);notice='TRIPLE RESONANCE SPECIAL ATTACK!';noticeT=2.5;enemies.forEach(e=>{if(!e.dead&&Math.abs(e.x-p.x)<800)hit(e,e.boss?215:900)});beep(300,.35,'sawtooth',.08);setTimeout(()=>beep(720,.38,'triangle',.065),170)}
+function update(dt){if(state!=='play')return;elapsed+=dt;let h=HEROES[p.hero];p.atk=Math.max(0,p.atk-dt);p.inv=Math.max(0,p.inv-dt);p.anim=Math.max(0,p.anim-dt);noticeT=Math.max(0,noticeT-dt);specialT=Math.max(0,specialT-dt);shake=Math.max(0,shake-dt*25);flash=Math.max(0,flash-dt*2);
+ p.vx=((input.right?1:0)-(input.left?1:0))*h.speed;if(p.vx!==0)p.dir=Math.sign(p.vx);
+ if(input.jump&&p.onGround){p.vy=-530;p.onGround=false;beep(510,.06,'triangle')}
+ if(input.attack&&p.atk<=0)attack();
+ p.x=Math.max(0,Math.min(WORLD-p.w,p.x+p.vx*dt));p.vy+=1250*dt;p.y+=p.vy*dt;
+ if(p.y+p.h>=FLOOR){p.y=FLOOR-p.h;p.vy=0;p.onGround=true}
+ cam+=(Math.max(0,Math.min(WORLD-W,p.x-W*.34))-cam)*Math.min(1,dt*5);
+ enemies.forEach(e=>{if(e.dead)return;e.t+=dt;
+ if(e.boss){e.x=e.home+Math.sin(e.t*.7)*20;e.fireCd=(e.fireCd??2.2)-dt;if(e.fireCd<=0){projectiles.push({x:e.x+18,y:e.y+40,dx:-310,damage:10,hero:0,life:2.5,r:11,enemy:true});e.fireCd=2.1}}
+ else{e.x=e.home+Math.sin(e.t*1.9+e.home)*25}
+ if(Math.abs((p.x+p.w/2)-(e.x+e.w/2))<(e.w/2+p.w/2-6) && Math.abs((p.y+p.h/2)-(e.y+e.h/2))<(e.h/2+p.h/2-4)&&p.inv<=0){p.hp-=e.boss?20:13;p.inv=1.25;p.vy=-240;p.x=Math.max(0,p.x+(p.x<e.x?-32:32));shake=6;notice='ダメージ！';noticeT=.65;beep(120,.22,'sawtooth',.07);if(p.hp<=0)end(false)}
+ });
+ for(let i=projectiles.length-1;i>=0;i--){let b=projectiles[i];b.x+=b.dx*dt;b.life-=dt;if(!b.enemy){for(const e of enemies){if(!e.dead&&b.x+ b.r>e.x&&b.x-b.r<e.x+e.w&&b.y+b.r>e.y&&b.y-b.r<e.y+e.h){hit(e,b.damage);b.life=0;break}}}else{if(Math.abs((p.x+15)-b.x)<28&&Math.abs((p.y+27)-b.y)<30&&p.inv<=0){p.hp-=b.damage;p.inv=1.1;shake=5;b.life=0;if(p.hp<=0)end(false)}}if(b.life<=0||b.x<0||b.x>WORLD)projectiles.splice(i,1)}
+ drops.forEach(d=>{d.t-=dt;if(Math.abs(d.x-(p.x+15))<30){p.hp=Math.min(100,p.hp+18);d.t=0;beep(850,.1,'triangle')}});drops=drops.filter(d=>d.t>0);
+ particles.forEach(q=>{q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=380*dt;q.t-=dt});particles=particles.filter(q=>q.t>0);
+ if(goal&&p.x>WORLD-160)end(true);
+}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
+function text(txt,x,y,size,color='#fff',align='left'){ctx.font=`900 ${size}px system-ui,sans-serif`;ctx.textAlign=align;ctx.lineJoin='round';ctx.strokeStyle='#061a26';ctx.lineWidth=Math.max(3,Math.floor(size/5));ctx.strokeText(txt,x,y);ctx.fillStyle=color;ctx.fillText(txt,x,y)}
+function scenery(t){let sky=ctx.createLinearGradient(0,0,0,FLOOR);sky.addColorStop(0,'#122d4a');sky.addColorStop(.5,'#3e7790');sky.addColorStop(1,'#b5d28f');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#fce4a4';ctx.beginPath();ctx.arc(785-cam*.04,92,47,0,Math.PI*2);ctx.fill();
+ for(let k=0;k<16;k++){let xx=(k*241+20-cam*.15)%(W+300);if(xx<-160)xx+=W+300;rect(xx,90+Math.sin(k)*33,110,12,'#ffffff2a');rect(xx+20,78+Math.sin(k)*33,80,14,'#ffffff2a')}
+ function mountains(par,color,base,scale){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(-100,H);for(let x=-200;x<=W+300;x+=85){let world=x+cam*par;let y=base- Math.abs(Math.sin(world/340))*scale-Math.abs(Math.sin(world/1320))*30;ctx.lineTo(x,y)}ctx.lineTo(W+100,H);ctx.fill()}
+ mountains(.18,'#365d69',295,75);mountains(.32,'#2b666a',345,85);
+ for(let i=0;i<36;i++){let x=i*145-cam*.48;x%=W+320;if(x<-160)x+=W+320;let size=56+rando(i*3)*55;rect(x,324-size,14,size+110,'#1b493e');for(let j=-2;j<=2;j++){rect(x-32+j*14,326-size-20+Math.abs(j)*13,82-j*3,32,'#286b55');rect(x-22+j*14,323-size-35+Math.abs(j)*10,64,25,'#338264')}}
+ rect(0,FLOOR-2,W,H-FLOOR+2,'#2b4636');rect(0,FLOOR-9,W,12,'#7cb857');for(let x=-25;x<W+50;x+=25){let world=x+cam;rect(x,FLOOR-13+(rando(Math.floor(world/25))*5|0),4,8,'#c9db72');rect(x,FLOOR+21,10,5,'#537054');rect(x+9,FLOOR+48,16,5,'#263a31')}
+}
+function drawHero(x,y,hero,scale=1,dir=1,blink=false){let h=HEROES[hero];ctx.save();ctx.translate(Math.round(x+17),Math.round(y));ctx.scale(scale*dir,scale);if(blink)ctx.globalAlpha=.4;
+ const px=(a,b,w,k,c)=>rect(a,b,w,k,c);
+ px(-15,14,30,17,'#0c2635');px(-13,17,26,13,h.hair);px(-11,18,22,18,'#f1bda0');px(-13,11,27,13,h.hair);
+ if(hero===2){px(-16,13,32,13,h.hair);px(-19,22,10,25,h.hair);px(9,22,11,25,h.hair)}
+ if(hero===0){px(-13,13,26,12,'#151d2d');px(-14,20,6,21,'#172538');px(6,16,8,8,'#e8f0ff')}
+ px(-6,26,5,5,'#182f44');px(5,26,5,5,'#182f44');px(-5,26,2,3,h.color);px(5,26,2,3,h.color);
+ px(-15,37,30,21,h.cloth);px(-12,43,24,13,h.dress);px(-17,38,6,18,'#edc19e');px(11,38,6,18,'#edc19e');
+ if(hero===0){px(-12,44,24,10,'#eaf2fa');px(-13,40,26,5,'#3266a2');px(-5,39,10,7,'#4da0c9');px(-16,12,32,6,'#d6e0ed')}
+ if(hero===1){px(-14,38,7,25,'#9f2d35');px(8,38,7,25,'#9f2d35')}
+ px(-11,58,9,10,'#253246');px(2,58,9,10,'#253246');px(-12,67,13,5,'#101a2a');px(2,67,13,5,'#101a2a');
+ if(hero===0){px(13,30,4,40,'#dbe7f8');px(15,21,2,25,h.color)}
+ if(hero===1){px(13,43,18,5,'#333846');px(26,40,8,4,'#ffd278')}
+ if(hero===2){px(14,31,5,32,'#8d5d31');px(12,28,10,7,'#f4d66d')}
+ ctx.restore()}
+function drawEnemy(e){let x=e.x-cam,y=e.y;if(x<-200||x>W+200||e.dead)return;ctx.save();ctx.translate(Math.round(x),Math.round(y));let s=e.boss?3.1:1;ctx.scale(s,s);let wobble=Math.sin(elapsed*3+e.x)*1.2;
+ rect(5,5+wobble,37,25,'#3b2825');rect(8,2+wobble,35,26,e.boss?'#73503c':'#825344');rect(32,13+wobble,17,11,'#5a3b34');rect(8,-4+wobble,10,13,'#5a3834');rect(22,-2+wobble,10,10,'#644238');rect(36,13+wobble,5,5,'#ffe6a9');rect(40,15+wobble,5,3,'#171b21');rect(13,26+wobble,9,10,'#322927');rect(29,26+wobble,9,10,'#322927');rect(18,11+wobble,4,4,'#e75b4d');
+ ctx.restore();if(e.boss){rect(x,y-25,156,10,'#161c2a');rect(x,y-25,Math.max(0,156*e.hp/e.max),10,'#fa5b56');text('GIANT BEAST',x+78,y-31,14,'#fff7d1','center')}}
+function hud(){rect(14,56,292,80,'#0b1b2acc');rect(20,62,54,62,'#152634');rect(22,65,50,56,HEROES[p.hero].color+'54');drawHero(30,65,p.hero,.59,1,false);
+ text(HEROES[p.hero].name,85,83,21,'#f8f5df');text('HP',85,111,16);rect(119,96,173,15,'#172632');rect(119,96,173*p.hp/100,15,p.hp>30?'#65e6a9':'#fa827d');
+ text('MQ',85,132,15);rect(119,119,173,12,'#172632');let grad=ctx.createLinearGradient(119,0,292,0);grad.addColorStop(0,'#e68172');grad.addColorStop(.48,'#ffe070');grad.addColorStop(1,'#5bdfe7');ctx.fillStyle=grad;ctx.fillRect(119,119,173*p.mq/100,12);
+ text('SCORE '+score,760,66,20,'#ffe8a4');text('STAGE 01  月夜の草原',W/2,40,23,'#f7f0d8','center');
+ if(p.mq===100)text('共鳴 READY!',W/2,85,23,'#ffe68e','center');
+ if(noticeT>0)text(notice,W/2,175,25,'#f9f1c0','center');
+ if(goal)text('GOAL ▶',790,130,24,'#ffeeb3');
+}
+function render(){ctx.save();if(shake>0)ctx.translate((rando(elapsed*232)-.5)*shake,(rando(elapsed*173)-.5)*shake);scenery(elapsed);
+ for(let x=400;x<WORLD;x+=560){let sx=x-cam;if(sx>0&&sx<W){rect(sx,FLOOR-44,9,35,'#574233');rect(sx-16,FLOOR-48,41,12,'#eac981')}}
+ for(let x of [600,1210,1760,2410,2950]){let sx=x-cam;if(sx>-100&&sx<W+100){rect(sx,FLOOR-108,26,98,'#645843');rect(sx-15,FLOOR-127,54,28,'#74755b');rect(sx-30,FLOOR-144,86,23,'#4a7956')}}
+ enemies.forEach(drawEnemy);
+ drops.forEach(d=>{let xx=d.x-cam;rect(xx,d.y+Math.sin(elapsed*7)*4,15,15,'#61eab5');rect(xx+5,d.y+5,5,5,'#f9f8bb')});
+ projectiles.forEach(b=>{let xx=b.x-cam,yy=b.y;rect(xx-b.r,yy-b.r,b.r*2,b.r*2,b.enemy?'#eb654f':HEROES[b.hero].color);rect(xx-b.r/2,yy-b.r/2,b.r,b.r,'#f5ffdf')});
+ let sx=p.x-cam;if(p.anim>0&&p.hero===0){rect(sx+(p.dir>0?39:-60),p.y+7,67,4,'#41e5ff');rect(sx+(p.dir>0?49:-73),p.y+31,75,6,'#d0fbff')}
+ drawHero(sx,p.y-14,p.hero,.98,p.dir,p.inv>0&&Math.floor(elapsed*13)%2===0);
+ if(specialT>0){let a=specialT/1.05;rect(0,0,W,H,`rgba(247,223,111,${.07+.18*a})`);for(let i=0;i<3;i++){let cx=W*.25+i*W*.25,cy=235;ctx.beginPath();ctx.arc(cx,cy,80+(1-a)*50,0,Math.PI*2);ctx.strokeStyle=HEROES[i].color;ctx.lineWidth=8;ctx.stroke();drawHero(cx-17,cy-45,i,1.25,1,false)}text('TRIPLE RESONANCE',W/2,120,54,'#fff5c9','center');text('量 子 共 鳴 魔 法 発 動',W/2,390,34,'#fff','center')}
+ particles.forEach(q=>{rect(q.x-cam,q.y,q.size,q.size,q.color)});
+ if(flash>0){rect(0,0,W,H,`rgba(255,245,172,${flash*.24})`)}
+ hud();ctx.restore()}
+function loop(t){let dt=Math.min(.034,Math.max(0,(t-last)/1000||.016));last=t;if(state==='play')update(dt);else elapsed+=dt;render();requestAnimationFrame(loop)}
+function dispatch(action,down){if(action==='left'||action==='right'||action==='jump'||action==='attack'){input[action]=down;return}if(!down)return;if(action==='swap')swap();if(action==='special')special()}
+const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',Space:'jump',KeyW:'jump',KeyJ:'attack',KeyK:'swap',KeyL:'special'};
+document.addEventListener('keydown',e=>{if(e.code==='Enter'&&state!=='play'){initAudio();reset();return}let action=keyMap[e.code];if(action){e.preventDefault();if(!e.repeat)dispatch(action,true)}});
+document.addEventListener('keyup',e=>{let action=keyMap[e.code];if(action){e.preventDefault();dispatch(action,false)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){Object.keys(input).forEach(k=>input[k]=false)}});
+for(let node of document.querySelectorAll('.ctrl')){let action=node.dataset.control;
+ node.addEventListener('pointerdown',e=>{e.preventDefault();initAudio();node.setPointerCapture(e.pointerId);node.classList.add('pressed');dispatch(action,true)});
+ function release(e){node.classList.remove('pressed');dispatch(action,false)}
+ node.addEventListener('pointerup',release);node.addEventListener('pointercancel',release);node.addEventListener('lostpointercapture',release);
+}
+btnStart.addEventListener('click',()=>{initAudio();reset()});
+soundBtn.addEventListener('click',()=>{soundOn=!soundOn;if(soundOn)initAudio();soundBtn.textContent=soundOn?'♪ ON':'♪ OFF'});
+window.addEventListener('contextmenu',e=>e.preventDefault());
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
