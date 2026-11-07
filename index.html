@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#122e35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4.2</title>
+<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4.3</title>
 <style>
 :root { color-scheme: dark; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -14,7 +14,7 @@ html,body { width:100%;height:100%;margin:0;overflow:hidden;background:#091b24;c
 body { display:flex;align-items:center;justify-content:center; }
 #frame { position:relative;width:min(100vw,177.78dvh);aspect-ratio:16/9;max-height:100dvh;overflow:hidden;box-shadow:0 0 0 2px #1f4751,0 15px 70px #000; background:#0d2432; }
 canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
-#menu {position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(0deg,rgba(4,15,28,.87),rgba(3,26,33,.28));text-align:center;padding:20px;z-index:8;}
+#menu {position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(0deg,rgba(4,15,28,.87),rgba(3,26,33,.28));text-align:center;padding:20px;z-index:8;}
 #menu h1 {margin:0;font-size:clamp(18px,3.6vw,39px);letter-spacing:.07em;text-shadow:3px 4px 0 #133944,0 4px 16px #000;}
 #menu p {line-height:1.55;margin:0;max-width:600px;font-size:clamp(11px,1.6vw,17px)}
 #menu .tag {font-size:clamp(10px,1.2vw,13px);letter-spacing:.18em;color:#e9c883;}
@@ -33,12 +33,62 @@ canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
 @media (orientation: portrait) {#rotate {display:flex;} }
 #sound {position:absolute;right:1%;top:2%;font-size:clamp(11px,1.35vw,17px);border:1px solid #adc9c5aa;color:white;background:#0a2836b8;border-radius:8px;padding:5px 8px;z-index:7;cursor:pointer;}
 #version {position:absolute;left:1.3%;top:2%;font-size:clamp(10px,1.35vw,16px);font-weight:bold;text-shadow:2px 2px #000;z-index:3;pointer-events:none}
+
+/* 起動画面専用。ゲーム進行中のHUD・仮想ボタンとは分離 */
+#titleScreen{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;overflow:hidden;padding:2%;background:linear-gradient(180deg,rgba(3,10,31,.08) 0%,rgba(4,16,41,.28) 32%,rgba(2,10,27,.54) 63%,rgba(3,10,23,.08) 100%);}
+#titleScreen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 35%,transparent 0%,rgba(2,7,21,.16) 48%,rgba(0,5,20,.42) 100%);}
+#titleScreen .title-sigil{position:absolute;z-index:1;left:50%;top:6%;width:min(34vw,305px);aspect-ratio:1;transform:translateX(-50%);border:4px double rgba(233,112,94,.47);border-radius:50%;opacity:.56;box-shadow:0 0 0 8px rgba(239,145,113,.09),inset 0 0 0 14px rgba(201,76,87,.13),0 0 37px rgba(252,157,105,.12);pointer-events:none;}
+#titleScreen .title-sigil::after{content:"✦";position:absolute;inset:13%;border:2px dashed rgba(238,159,124,.65);border-radius:50%;display:grid;place-items:center;color:rgba(255,206,158,.5);font-size:clamp(45px,10vw,115px);}
+#titleScreen .title-copy{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:clamp(2px,.6vh,7px);margin-top:-9%;width:95%;}
+#titleScreen .title-eyebrow{margin:0;color:#fae0a4;font-family:Georgia,serif;font-size:clamp(9px,1.25vw,15px);font-weight:700;letter-spacing:.18em;text-shadow:0 2px 8px #031629;}
+#titleScreen h1{margin:0;font-size:clamp(22px,4.05vw,49px);font-weight:1000;letter-spacing:.01em;line-height:1.14;color:#f9f3e6;-webkit-text-stroke:.5px #103a46;text-shadow:3px 4px 0 #082a42,0 0 16px rgba(0,0,0,.85),0 3px 1px #061928;}
+#titleScreen h1 .first{display:block;white-space:nowrap;}
+#titleScreen h1 .second{display:block;color:#a7ffed;letter-spacing:.05em;font-size:.80em;margin-top:4px;}
+#titleScreen .title-rule{width:min(53%,460px);height:2px;background:linear-gradient(90deg,transparent,#efcf93,transparent);margin:4px 0;}
+#titleScreen .title-desc{margin:0;font-weight:750;color:#e6ecff;font-size:clamp(10px,1.42vw,16px);letter-spacing:.10em;text-shadow:0 2px 5px #020c19;}
+#titleScreen .title-actions{position:absolute;z-index:3;top:66%;left:50%;transform:translateX(-50%);width:48%;display:flex;flex-direction:column;align-items:center;gap:5px;}
+#titleStart{border:2px solid #f7e6ad;color:#fff3d5;background:linear-gradient(#1b657d,#0e3857);border-radius:6px;padding:clamp(8px,1.25vh,13px) clamp(20px,5vw,62px);box-shadow:0 4px 0 #08232f,0 0 15px #0b1c33;font-size:clamp(16px,2.45vw,28px);font-weight:900;white-space:nowrap;letter-spacing:.06em;cursor:pointer;animation:startGlow 2s ease-in-out infinite alternate;touch-action:manipulation;}
+#titleStart:active{transform:translateY(3px);box-shadow:0 1px 0 #08232f;}
+#titleScreen .title-stage{font-size:clamp(10px,1.23vw,15px);color:#f0dfaa;font-weight:800;letter-spacing:.15em;text-shadow:0 2px 7px #001321;white-space:nowrap;}
+#titleScreen .title-footer{position:absolute;z-index:3;bottom:1.3%;right:2%;font-size:clamp(9px,1.1vw,13px);font-weight:700;color:#e4d8ba;text-shadow:0 2px 5px #000;}
+#titleScreen .title-version{position:absolute;z-index:3;top:2.6%;left:2%;font-size:clamp(9px,1vw,13px);text-shadow:0 2px 4px #000;color:#e6e5d8;}
+@keyframes startGlow{from{filter:brightness(.93)}to{filter:brightness(1.24)}}
+#stageIntro{position:absolute;inset:0;z-index:9;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(3,13,30,.68);pointer-events:none;text-align:center;gap:9px;}
+#stageIntro .stage-n{font-size:clamp(15px,2.4vw,27px);font-weight:850;letter-spacing:.26em;color:#f2dfa4;text-shadow:0 2px 5px #02101e;}
+#stageIntro .stage-name{font-size:clamp(25px,5vw,58px);font-weight:1000;color:#f8f6e8;text-shadow:0 3px 0 #16354c,0 0 20px #00577a;}
+#stageIntro .stage-mission{font-size:clamp(12px,1.8vw,21px);color:#b1e2e3;font-weight:800;}
+#backTitle{border:1px solid #c9d4ce;border-radius:9px;background:#173b51;color:#fff;padding:8px 17px;font-size:clamp(12px,1.6vw,19px);font-weight:750;cursor:pointer;}
+#menu{z-index:11;}
+#frame[data-screen="title"] #version,#frame[data-screen="title"] #sound{display:none;}
+@media(max-height:480px){#titleScreen .title-copy{margin-top:-9%}#titleScreen .title-actions{top:67%;}#titleScreen .title-sigil{top:2%;width:min(30vw,235px)}}
+@media (prefers-reduced-motion:reduce){#titleStart{animation:none}}
+
 </style>
 </head>
 <body>
 <div id="frame">
 <canvas id="game" width="960" height="540" aria-label="横スクロールアクションゲーム"></canvas>
-<div id="version">ver.0.4.2 / 企画・原作：梅酢 / ChatGPT試作</div>
+<div id="titleScreen" aria-label="タイトル画面">
+  <div class="title-version">ver.0.4.3</div>
+  <div class="title-sigil" aria-hidden="true"></div>
+  <div class="title-copy">
+    <p class="title-eyebrow">THE WAY BACK TO PARALLEL WORLDS</p>
+    <h1><span class="first">異世界メイドはまさかの俺⁈</span><span class="second">横スクゲーのアソビカタ</span></h1>
+    <div class="title-rule"></div>
+    <p class="title-desc">QUANTUM RESONANCE · PIXEL ACTION</p>
+  </div>
+  <div class="title-actions">
+    <button id="titleStart" type="button">PUSH START</button>
+    <div class="title-stage">STAGE 01 — 月夜の森</div>
+  </div>
+  <div class="title-footer">企画・原作・監修：梅酢</div>
+</div>
+<div id="stageIntro" aria-live="polite" aria-label="ステージ開始">
+  <div class="stage-n">STAGE 01</div>
+  <div class="stage-name">月夜の森</div>
+  <div class="stage-mission">巨大熊型魔物を討伐せよ！</div>
+</div>
+<div id="version">ver.0.4.3 / 企画・原作：梅酢 / ChatGPT試作</div>
 <button id="sound" aria-label="サウンド切り替え">♪ ON</button>
 <div id="controls" aria-label="タッチ操作パネル">
  <div class="ctrl" id="left" data-control="left">◀</div>
@@ -51,9 +101,10 @@ canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
 <div id="rotate">📱<br>iPhoneを横向きにすると遊べます。<br>画面の回転ロックを解除してください。</div>
 <div id="menu">
  <div class="tag">QUANTUM RESONANCE · FAN CONCEPT PROTOTYPE</div>
- <h1>異世界メイドはまさかの俺⁈<br>横スクゲーのアソビカタ</h1>
+ <h1 id="resultTitle">STAGE RESULT</h1>
  <p id="menuText">月夜の森を駆け抜け、巨大な魔物を倒そう。<br>ミリア・カナト・アリステアを切り替えて戦う試作版です。ミリア・カナト・アリステア全員、新ドット絵34コマに対応。</p>
- <button id="start">PUSH START</button>
+ <button id="start">もう一度プレイ</button>
+ <button id="backTitle" type="button">タイトルに戻る</button>
  <p id="hint">横向き推奨｜画面ボタンで操作｜PC：←→ 移動 / Space ジャンプ / J 攻撃 / K 交代 / L 共鳴</p>
 </div>
 </div>
@@ -125,24 +176,29 @@ function miliaAtlasReady(){return atlasReady(0);}
 function aristeaAtlasReady(){return atlasReady(2);}
 
 const frame=document.getElementById('frame'),menu=document.getElementById('menu'),btnStart=document.getElementById('start'),menuText=document.getElementById('menuText');
-const controls=document.getElementById('controls'),soundBtn=document.getElementById('sound');
+ const titleScreen=document.getElementById('titleScreen'),titleStart=document.getElementById('titleStart'),stageIntro=document.getElementById('stageIntro'),backTitle=document.getElementById('backTitle'),resultTitle=document.getElementById('resultTitle');
+const controls=document.getElementById('controls'),soundBtn=document.getElementById('sound');frame.dataset.screen='title';
 const HEROES=[{name:'ミリア',color:'#1cc6f2',hair:'#111d35',cloth:'#e7e5ed',dress:'#234b7b',speed:310,dmg:32,range:85,cool:.28},
  {name:'カナト',color:'#ed6b6b',hair:'#172333',cloth:'#bc3940',dress:'#64282c',speed:285,dmg:17,range:480,cool:.25},
  {name:'アリステア',color:'#f5c757',hair:'#df7b32',cloth:'#264e99',dress:'#193363',speed:250,dmg:27,range:450,cool:.52}];
-let state='menu',last=0,elapsed=0,cam=0,score=0,skillsUsed=0,audio=null,soundOn=true,shake=0,flash=0,notice='',noticeT=0,specialT=0,particles=[],projectiles=[],drops=[],enemies=[],boss=null,goal=false;
+let state='title',introLeft=0,last=0,elapsed=0,cam=0,score=0,skillsUsed=0,audio=null,soundOn=true,shake=0,flash=0,notice='',noticeT=0,specialT=0,particles=[],projectiles=[],drops=[],enemies=[],boss=null,goal=false;
 let p={x:210,y:FLOOR-54,w:30,h:54,vx:0,vy:0,dir:1,onGround:true,hero:0,hp:100,mq:0,atk:0,inv:0,anim:0,runCycle:0,landT:0};
 const input={left:false,right:false,jump:false,attack:false,swap:false,special:false};
 function initAudio(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch(_){}}if(audio?.state==='suspended')audio.resume().catch(()=>{});}
 function beep(freq=400,duration=.08,type='square',vol=.028){if(!soundOn||!audio)return;try{let osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);gain.gain.setValueAtTime(vol,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration)}catch(_){}}
 function rando(n){const t=Math.sin(n*127.13+57.43)*43758.5453;return t-Math.floor(t)}
-function reset(){state='play';elapsed=0;cam=0;score=0;skillsUsed=0;shake=flash=specialT=0;notice='月夜の森：巨大熊型魔物を討伐せよ！';noticeT=2.3;particles=[];projectiles=[];drops=[];goal=false;
+function reset(){state='play';frame.dataset.screen='play';elapsed=0;cam=0;score=0;skillsUsed=0;shake=flash=specialT=0;notice='月夜の森：巨大熊型魔物を討伐せよ！';noticeT=2.3;particles=[];projectiles=[];drops=[];goal=false;
  p={x:210,y:FLOOR-54,w:30,h:54,vx:0,vy:0,dir:1,onGround:true,hero:0,hp:100,mq:0,atk:0,inv:1,anim:0,runCycle:0,landT:0};
  enemies=[];[330,520,730,940,1190,1400,1610,1840,2060,2270,2490,2680].forEach((x,i)=>enemies.push({x,y:FLOOR-33,w:45,h:33,hp:i%3===0?65:41,max:i%3===0?65:41,dir:i%2?1:-1,home:x,vy:0,t:0,dead:false,boss:false}));
  boss={x:3050,y:FLOOR-105,w:156,h:105,hp:430,max:430,dir:-1,home:3050,t:0,dead:false,boss:true};enemies.push(boss);
- controls.style.display='block';menu.style.display='none';
+ controls.style.display='block';menu.style.display='none';titleScreen.style.display='none';stageIntro.style.display='none';
 }
-function end(win){if(state!=='play')return;state=win?'win':'dead';controls.style.display='none';menu.style.display='flex';
- menuText.innerHTML=win?`<strong>STAGE CLEAR！</strong><br>巨大魔物を討伐した！　スコア ${score}<br>3人の力が希望をつないだ。`:`<strong>GAME OVER</strong><br>スコア ${score}<br>再挑戦して魔物を討伐しよう。`;
+function beginStage(){initAudio();reset();state='intro';frame.dataset.screen='intro';introLeft=1.25;controls.style.display='none';stageIntro.style.display='flex';}
+function showTitle(){state='title';frame.dataset.screen='title';cam=0;elapsed=0;introLeft=0;stageIntro.style.display='none';menu.style.display='none';titleScreen.style.display='flex';controls.style.display='none';Object.keys(input).forEach(k=>input[k]=false);}
+
+function end(win){if(state!=='play')return;state=win?'win':'dead';frame.dataset.screen='result';controls.style.display='none';menu.style.display='flex';
+ resultTitle.textContent=win?'STAGE CLEAR!':'GAME OVER';
+  menuText.innerHTML=win?`<strong>STAGE CLEAR！</strong><br>巨大魔物を討伐した！　スコア ${score}<br>3人の力が希望をつないだ。`:`<strong>GAME OVER</strong><br>スコア ${score}<br>再挑戦して魔物を討伐しよう。`;
  btnStart.textContent='もう一度プレイ';beep(win?700:120,.35,'sawtooth',.05);
 }
 function spark(x,y,color,n=7){for(let i=0;i<n;i++){let angle=Math.PI*2*rando(elapsed*83+i*19.3),sp=80+rando(i*13.2+elapsed)*200;particles.push({x,y,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp-70,t:.3+rando(i+elapsed)*.35,color,size:3+Math.round(rando(i*1.2)*4)})}}
@@ -269,7 +325,19 @@ function hud(){rect(14,56,292,80,'#0b1b2acc');rect(20,62,54,62,'#152634');rect(2
  if(noticeT>0)text(notice,W/2,175,25,'#f9f1c0','center');
  if(goal)text('GOAL ▶',790,130,24,'#ffeeb3');
 }
-function render(){ctx.save();if(shake>0)ctx.translate((rando(elapsed*232)-.5)*shake,(rando(elapsed*173)-.5)*shake);scenery(elapsed);
+function drawTitleScene(){
+  // 起動画面は独立して描画：敵・HUD・ステージ中のプレイヤーは表示しない。
+  scenery(elapsed);
+  rect(0,0,W,H,'rgba(4,13,30,.11)');
+  // タイトルだけの3人の待機アニメ。通常プレイのサイズ70%を使用。
+  [0,1,2].forEach((hero,i)=>{
+    const x=115+i*105;
+    ctx.save();ctx.globalAlpha=.26;ctx.fillStyle='#000b19';ctx.beginPath();ctx.ellipse(x,FLOOR+4,23,5,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    drawAtlasFrame(hero,0,Math.floor(elapsed*7+i*2)%8,x,FLOOR+3,SPRITE_SCALE[hero]*PLAYER_VISUAL_SIZE,1,false)
+    ||drawHero(x-15,FLOOR-70,hero,1,1,false);
+  });
+}
+function render(){ctx.save();if(state==='title'){drawTitleScene();ctx.restore();return;}if(shake>0)ctx.translate((rando(elapsed*232)-.5)*shake,(rando(elapsed*173)-.5)*shake);scenery(elapsed);
  // 夜の森：低彩度の前景草と切り株。足場判定には影響しない装飾。
  for(let wx=340;wx<WORLD;wx+=355){const sx=Math.round(wx-cam);if(sx>-80&&sx<W+80){
    rect(sx,FLOOR-13,5,13,'#194d3b');rect(sx+5,FLOOR-19,4,19,'#1d5945');
@@ -285,7 +353,7 @@ function render(){ctx.save();if(shake>0)ctx.translate((rando(elapsed*232)-.5)*sh
  particles.forEach(q=>{rect(q.x-cam,q.y,q.size,q.size,q.color)});
  if(flash>0){rect(0,0,W,H,`rgba(255,245,172,${flash*.24})`)}
  hud();ctx.restore()}
-function loop(t){let dt=Math.min(.034,Math.max(0,(t-last)/1000||.016));last=t;if(state==='play')update(dt);else elapsed+=dt;render();requestAnimationFrame(loop)}
+function loop(t){let dt=Math.min(.034,Math.max(0,(t-last)/1000||.016));last=t;if(state==='play')update(dt);else{elapsed+=dt;if(state==='intro'){introLeft-=dt;if(introLeft<=0){state='play';stageIntro.style.display='none';controls.style.display='block';}}}render();requestAnimationFrame(loop)}
 function dispatch(action,down){
   if(action==='left'||action==='right'){input[action]=down;return;}
   if(action==='jump'){
@@ -302,7 +370,7 @@ function dispatch(action,down){
   if(action==='swap')swap();if(action==='special')special();
 }
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',Space:'jump',KeyW:'jump',KeyJ:'attack',KeyK:'swap',KeyL:'special'};
-document.addEventListener('keydown',e=>{if(e.code==='Enter'&&state!=='play'){initAudio();reset();return}let action=keyMap[e.code];if(action){e.preventDefault();if(!e.repeat)dispatch(action,true)}});
+document.addEventListener('keydown',e=>{if((e.code==='Enter'||e.code==='Space')&&(state==='title'||state==='win'||state==='dead')){e.preventDefault();beginStage();return}let action=keyMap[e.code];if(action){e.preventDefault();if(!e.repeat)dispatch(action,true)}});
 document.addEventListener('keyup',e=>{let action=keyMap[e.code];if(action){e.preventDefault();dispatch(action,false)}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){Object.keys(input).forEach(k=>input[k]=false)}});
 for(let node of document.querySelectorAll('.ctrl')){let action=node.dataset.control;
@@ -310,7 +378,9 @@ for(let node of document.querySelectorAll('.ctrl')){let action=node.dataset.cont
  function release(e){node.classList.remove('pressed');dispatch(action,false)}
  node.addEventListener('pointerup',release);node.addEventListener('pointercancel',release);node.addEventListener('lostpointercapture',release);
 }
-btnStart.addEventListener('click',()=>{initAudio();reset()});
+titleStart.addEventListener('click',beginStage);
+ btnStart.addEventListener('click',beginStage);
+ backTitle.addEventListener('click',showTitle);
 soundBtn.addEventListener('click',()=>{soundOn=!soundOn;if(soundOn)initAudio();soundBtn.textContent=soundOn?'♪ ON':'♪ OFF'});
 window.addEventListener('contextmenu',e=>e.preventDefault());
 requestAnimationFrame(loop);
