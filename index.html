@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#122e35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4.7</title>
+<title>異世界メイド｜横スクゲーのアソビカタ 体験版0.4.9</title>
 <style>
 :root { color-scheme: dark; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -70,7 +70,7 @@ canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
 <div id="frame">
 <canvas id="game" width="960" height="540" aria-label="横スクロールアクションゲーム"></canvas>
 <div id="titleScreen" aria-label="タイトル画面">
-  <div class="title-version">ver.0.4.7</div>
+  <div class="title-version">ver.0.4.9</div>
   <button id="titleBgmButton" type="button" aria-label="タイトルBGMを再生">♪ BGM ▶</button>
   <button id="titleHelp" type="button" aria-label="操作方法を表示">R2 : HELP</button>
   <div class="title-actions"><button id="titleStart" type="button">PUSH START</button></div>
@@ -91,7 +91,7 @@ canvas { width:100%;height:100%;display:block;image-rendering:pixelated; }
   <div class="stage-name">月夜の森</div>
   <div class="stage-mission">巨大熊型魔物を討伐せよ！</div>
 </div>
-<div id="version">ver.0.4.7 / 企画・原作：梅酢 / ChatGPT試作</div>
+<div id="version">ver.0.4.9 / 企画・原作：梅酢 / ChatGPT試作</div>
 <button id="bgmSwitch" type="button" aria-label="BGM切り替え">♪ BGM ON</button>
 <button id="sound" type="button" aria-label="効果音切り替え">SFX ON</button>
 <div id="controls" aria-label="タッチ操作パネル">
@@ -125,6 +125,9 @@ const HERO_ATLAS_CELL_W=[352,224,224],HERO_ATLAS_CELL_H=[384,208,208],HERO_ATLAS
 const SPRITE_SCALE=[.53,.66,.68];
 // 操作キャラクターの描画倍率（Ver.0.4.0から全員一律70％）。UIと合体技演出は変更しない。
 const PLAYER_VISUAL_SIZE=0.70;
+// v0.4.9: 表示倍率のみ変更（現在の描画サイズに対する比率）。当たり判定や移動速度は維持。
+const MILIA_SIZE_MULTIPLIER=0.70;
+const BEAR_BOSS_SIZE_MULTIPLIER=2.50;
 const SPRITE_FRAME_COUNT=[8,8,8,10];
 const heroAtlases=[];
 const miliaAtlas=new Image();
@@ -489,20 +492,20 @@ function drawAtlasFrame(hero,row,frameIndex,anchorX,footY,scale,dir=1,blink=fals
 }
 function drawCharacterSprite(screenX,worldY,hero,dir,blink=false){
   if(!atlasReady(hero)){
-    const fallbackScale=.98*PLAYER_VISUAL_SIZE;
+    const fallbackScale=.98*PLAYER_VISUAL_SIZE*(hero===0?MILIA_SIZE_MULTIPLIER:1);
     // DrawHero draws its feet at local y=72. Keep the bottom at the physics feet.
     drawHero(screenX+p.w/2-17*fallbackScale,worldY+p.h-72*fallbackScale,hero,fallbackScale,dir,blink);return;
   }
   const f=currentActionFrame(hero);
-  drawAtlasFrame(hero,f.row,f.frameIndex,screenX+p.w/2,worldY+p.h+3,SPRITE_SCALE[hero]*PLAYER_VISUAL_SIZE,dir,blink);
+  drawAtlasFrame(hero,f.row,f.frameIndex,screenX+p.w/2,worldY+p.h+3,SPRITE_SCALE[hero]*PLAYER_VISUAL_SIZE*(hero===0?MILIA_SIZE_MULTIPLIER:1),dir,blink);
 }
 function drawMiliaSlash(screenX,worldY,dir){
   if(p.hero!==0||p.anim<=0||!miliaSlashReady())return;
   const duration=.28,progress=1-p.anim/duration;
   if(progress<.18||progress>.97)return;
   const frame=Math.min(5,Math.max(0,Math.floor((progress-.18)/.79*6)));
-  const scale=.52;
-  const anchorX=screenX+p.w/2+dir*34,anchorY=worldY+p.h+4;
+  const scale=.52*MILIA_SIZE_MULTIPLIER;
+  const anchorX=screenX+p.w/2+dir*34*MILIA_SIZE_MULTIPLIER,anchorY=worldY+p.h+4;
   ctx.save();
   ctx.translate(Math.round(anchorX),Math.round(anchorY));
   ctx.scale(dir,1);
@@ -549,11 +552,11 @@ function drawProjectileSprite(b){
 function drawEnemy(e){
  if(e.dead)return;
  const x=e.x-cam;
- if(x<-(e.boss?270:125)||x>W+(e.boss?270:125))return;
+ if(x<-(e.boss?440:125)||x>W+(e.boss?440:125))return;
  const atlas=e.boss?bearAtlas:wolfAtlas;
  if(enemyAtlasReady(e)){
   const f=enemyFrame(e),cw=e.boss?BEAR_CELL_W:WOLF_CELL_W,ch=e.boss?BEAR_CELL_H:WOLF_CELL_H;
-  const foot=e.boss?BEAR_FOOT:WOLF_FOOT,sc=e.boss?.98:.53;
+  const foot=e.boss?BEAR_FOOT:WOLF_FOOT,sc=e.boss?.98*BEAR_BOSS_SIZE_MULTIPLIER:.53;
   ctx.save();ctx.translate(Math.round(x+e.w/2),Math.round(e.y+e.h+2));
   // 原画は左向き。敵が右へ向かう場合だけ反転。
   if(e.dir>0)ctx.scale(-1,1);
@@ -563,13 +566,19 @@ function drawEnemy(e){
   ctx.save();ctx.translate(Math.round(x),Math.round(e.y));
   rect(0,5,e.w,e.h-5,e.boss?'#6e4b36':'#343a40');rect(9,12,8,7,'#dc514a');ctx.restore();
  }
- // 敵の攻撃予兆。強い突進と爪攻撃を見て避けられるようにする。
- if(e.boss&&(e.action==='bearWindupCharge'||e.action==='bearWindupSlash')){
-  const x0=e.dir<0?x-40:x+e.w+8;
-  text(e.action==='bearWindupCharge'?'突進！':'爪攻撃！',x0,e.y-13,17,'#ffe4a3',e.dir<0?'left':'right');
+ // 250%巨大化したクマのHP・予兆表示が体に埋まらないよう、頭上（画面内）へ調整。
+ if(e.boss){
+  const topY=e.y+e.h+2-BEAR_FOOT*.98*BEAR_BOSS_SIZE_MULTIPLIER;
+  const bossUIY=Math.max(24,topY-14);
+  if(e.action==='bearWindupCharge'||e.action==='bearWindupSlash'){
+   text(e.action==='bearWindupCharge'?'突進！':'爪攻撃！',x+e.w/2,bossUIY+41,17,'#ffe4a3','center');
+  }
+  const barW=e.w*BEAR_BOSS_SIZE_MULTIPLIER;
+  const barX=x+e.w/2-barW/2;
+  rect(barX,bossUIY,barW,10,'#161c2a');
+  rect(barX,bossUIY,Math.max(0,barW*e.hp/e.max),10,'#fa5b56');
+  text('GIANT BEAST',x+e.w/2,bossUIY-6,14,'#fff7d1','center');
  }
- if(e.boss){rect(x,e.y-23,e.w,10,'#161c2a');rect(x,e.y-23,Math.max(0,e.w*e.hp/e.max),10,'#fa5b56');
-  text('GIANT BEAST',x+e.w/2,e.y-30,14,'#fff7d1','center');}
 }
 function hud(){rect(14,56,292,80,'#0b1b2acc');rect(20,62,54,62,'#152634');rect(22,65,50,56,HEROES[p.hero].color+'54');drawPortrait(p.hero,22,65,50,56);
  text(HEROES[p.hero].name,85,83,21,'#f8f5df');text('HP',85,111,16);rect(119,96,173,15,'#172632');rect(119,96,173*p.hp/100,15,p.hp>30?'#65e6a9':'#fa827d');
